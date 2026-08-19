@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgriShare - Agricultural Machinery Rental Platform",
+  title: "GauShakti - Agricultural Machinery Rental Platform",
   description: "Peer-to-peer agricultural equipment sharing and rental marketplace for farmers.",
 };
 
