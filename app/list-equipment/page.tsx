@@ -11,7 +11,8 @@ const CATEGORIES = [
   "Tillers & Cultivators",
   "Drone Sprayers",
   "Pumps & Irrigation",
-  "Other Implements",
+  "Planting & Seeding",
+  "Trailers & Haulage",
 ];
 
 export default function ListEquipmentPage() {
@@ -19,7 +20,9 @@ export default function ListEquipmentPage() {
   const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     title: "",
     category: CATEGORIES[0],
@@ -28,8 +31,14 @@ export default function ListEquipmentPage() {
     description: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,138 +53,155 @@ export default function ListEquipmentPage() {
         return;
       }
 
-      let imageUrl = "";
+      let uploadedImageUrl = "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600";
 
-      // Upload file to Supabase Storage if chosen
-      if (imageFile) {
-        const fileExt = imageFile.name.split(".").pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      // 1. Upload photo to Supabase Storage if selected
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split(".").pop();
+        const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
         const { error: uploadError } = await supabase.storage
           .from("equipment-images")
-          .upload(fileName, imageFile);
+          .upload(filePath, selectedFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
 
         if (uploadError) throw uploadError;
 
         const { data: publicUrlData } = supabase.storage
           .from("equipment-images")
-          .getPublicUrl(fileName);
+          .getPublicUrl(filePath);
 
-        imageUrl = publicUrlData.publicUrl;
+        uploadedImageUrl = publicUrlData.publicUrl;
       }
 
-      // Insert record into PostgreSQL
-      const { error: insertError } = await supabase
-        .from("equipment_listings")
-        .insert({
-          owner_id: user.id,
-          title: formData.title,
-          category: formData.category,
-          daily_rate: parseFloat(formData.daily_rate),
-          location: formData.location,
-          description: formData.description,
-          images: imageUrl ? [imageUrl] : [],
-          is_available: true,
-        });
+      // 2. Insert record into PostgreSQL
+      const { error: insertError } = await supabase.from("equipment_listings").insert({
+        owner_id: user.id,
+        title: formData.title,
+        category: formData.category,
+        daily_rate: parseFloat(formData.daily_rate),
+        location: formData.location,
+        description: formData.description,
+        images: [uploadedImageUrl],
+        is_available: true,
+      });
 
       if (insertError) throw insertError;
 
-      alert("Equipment listed successfully!");
+      alert("Equipment posted successfully!");
       router.push("/");
       router.refresh();
     } catch (err: unknown) {
       const error = err as Error;
-      alert(error.message || "Failed to list equipment");
+      alert("Failed to list equipment: " + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc", padding: "2rem 1.5rem" }}>
-      <div style={{ maxWidth: "600px", margin: "0 auto", backgroundColor: "#ffffff", padding: "2.5rem", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-        <Link href="/" style={{ fontSize: "0.85rem", color: "#16a34a", fontWeight: "600", marginBottom: "1rem", display: "inline-block" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc", padding: "2.5rem 1.5rem" }}>
+      <div style={{ maxWidth: "650px", margin: "0 auto", backgroundColor: "#ffffff", padding: "2rem", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.04)" }}>
+        
+        <Link href="/" style={{ fontSize: "0.85rem", color: "#16a34a", fontWeight: "600", display: "inline-block", marginBottom: "1rem" }}>
           ← Back to Marketplace
         </Link>
-        <h1 style={{ fontSize: "1.8rem", fontWeight: "800", color: "#0f172a", marginBottom: "0.4rem" }}>
-          List Your Equipment
+
+        <h1 style={{ fontSize: "1.8rem", fontWeight: "800", color: "#0f172a", marginBottom: "0.3rem" }}>
+          List Machinery for Rent
         </h1>
         <p style={{ color: "#64748b", fontSize: "0.95rem", marginBottom: "2rem" }}>
-          Earn money from your idle machinery by renting it to nearby farmers.
+          Set your rental pricing and connect directly with local farmers needing equipment.
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
           <div>
-            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.4rem" }}>Equipment Title *</label>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", color: "#334155", marginBottom: "0.4rem" }}>
+              Machinery Name & Model *
+            </label>
             <input
               type="text"
-              name="title"
               required
-              placeholder="e.g. John Deere 5050 D 50HP"
+              placeholder="e.g. Swaraj 744 FE 48 HP Tractor"
               value={formData.title}
-              onChange={handleChange}
-              style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #cbd5e1", outline: "none" }}
             />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div>
-              <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.4rem" }}>Category *</label>
+              <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", color: "#334155", marginBottom: "0.4rem" }}>
+                Category *
+              </label>
               <select
-                name="category"
                 value={formData.category}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #cbd5e1", backgroundColor: "#fff" }}
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
+
             <div>
-              <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.4rem" }}>Daily Rate (₹) *</label>
+              <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", color: "#334155", marginBottom: "0.4rem" }}>
+                Daily Rent Price (₹) *
+              </label>
               <input
                 type="number"
-                name="daily_rate"
                 required
-                placeholder="2000"
+                placeholder="1800"
                 value={formData.daily_rate}
-                onChange={handleChange}
+                onChange={(e) => setFormData({ ...formData, daily_rate: e.target.value })}
                 style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #cbd5e1" }}
               />
             </div>
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.4rem" }}>Location (Village/District) *</label>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", color: "#334155", marginBottom: "0.4rem" }}>
+              Location (Village / Taluk / District) *
+            </label>
             <input
               type="text"
-              name="location"
               required
-              placeholder="e.g. Mandya, Karnataka"
+              placeholder="e.g. Maddur, Mandya"
               value={formData.location}
-              onChange={handleChange}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #cbd5e1" }}
             />
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.4rem" }}>Machinery Photo</label>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", color: "#334155", marginBottom: "0.4rem" }}>
+              Upload Machine Photo
+            </label>
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              onChange={handleFileChange}
               style={{ width: "100%", padding: "0.5rem", borderRadius: "6px", border: "1px solid #cbd5e1" }}
             />
+            {previewUrl && (
+              <div style={{ marginTop: "0.8rem", width: "100%", height: "180px", borderRadius: "8px", overflow: "hidden" }}>
+                <img src={previewUrl} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            )}
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", marginBottom: "0.4rem" }}>Description & Terms</label>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: "600", color: "#334155", marginBottom: "0.4rem" }}>
+              Description & Conditions
+            </label>
             <textarea
-              name="description"
               rows={4}
-              placeholder="Provide specifications, attachment details (e.g. rotavator included), fuel terms..."
+              placeholder="Specify attachments included (rotavator/plough), operator availability, and diesel requirements..."
               value={formData.description}
-              onChange={handleChange}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #cbd5e1" }}
             />
           </div>
@@ -190,10 +216,12 @@ export default function ListEquipmentPage() {
               borderRadius: "8px",
               border: "none",
               fontWeight: "700",
+              fontSize: "1rem",
               cursor: loading ? "not-allowed" : "pointer",
+              marginTop: "0.5rem",
             }}
           >
-            {loading ? "Publishing..." : "Post Equipment for Rent"}
+            {loading ? "Publishing Listing..." : "Post Equipment for Rent"}
           </button>
         </form>
       </div>

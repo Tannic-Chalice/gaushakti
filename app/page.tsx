@@ -67,60 +67,6 @@ export default async function HomePage({
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "1rem 2.5rem",
-          backgroundColor: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span style={{ fontSize: "1.8rem" }}>🚜</span>
-          <div>
-            <span style={{ fontSize: "1.4rem", fontWeight: "800", color: "#15803d" }}>AgriShare</span>
-            <span style={{ fontSize: "0.75rem", display: "block", color: "#64748b", fontWeight: "600" }}>
-              FARM EQUIPMENT RENTAL
-            </span>
-          </div>
-        </div>
-
-        <nav style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <Link href="/my-rentals" style={{ padding: "0.55rem 1rem", fontSize: "0.95rem", color: "#334155", fontWeight: "600" }}>
-            My Bookings
-          </Link>
-          <Link
-            href="/list-equipment"
-            style={{
-              backgroundColor: "#16a34a",
-              color: "#ffffff",
-              padding: "0.6rem 1.25rem",
-              borderRadius: "8px",
-              fontWeight: "600",
-              fontSize: "0.95rem",
-            }}
-          >
-            + List Your Equipment
-          </Link>
-          <Link
-            href="/auth/login"
-            style={{
-              border: "1.5px solid #cbd5e1",
-              padding: "0.55rem 1.2rem",
-              borderRadius: "8px",
-              fontWeight: "600",
-              fontSize: "0.95rem",
-              color: "#1e293b",
-            }}
-          >
-            Sign In
-          </Link>
-        </nav>
-      </header>
-
       {/* Hero Section */}
       <section style={{ background: "linear-gradient(180deg, #ecfdf5 0%, #f8fafc 100%)", padding: "3.5rem 1.5rem", textAlign: "center" }}>
         <div style={{ maxWidth: "800px", margin: "0 auto" }}>
