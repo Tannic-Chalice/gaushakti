@@ -3,12 +3,9 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const supabase = createClient();
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,54 +17,53 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.status === 401) {
+          router.push("/auth/login");
+          return;
+        }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, phone, location, email")
-        .eq("id", user.id)
-        .single();
-
-      if (profile) {
-        setFormData({
-          full_name: profile.full_name || "",
-          phone: profile.phone || "",
-          location: profile.location || "",
-          email: user.email || "",
-        });
+        const data = await res.json();
+        if (data.user) {
+          setFormData({
+            full_name: data.user.full_name,
+            phone: data.user.phone,
+            location: data.user.location,
+            email: data.user.email,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load profile via API:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
-
     loadProfile();
-  }, [supabase, router]);
+  }, [router]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
+      const res = await fetch("/api/auth/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           full_name: formData.full_name,
           phone: formData.phone,
           location: formData.location,
-        })
-        .eq("id", user.id);
+        }),
+      });
 
-      if (error) throw error;
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+
       alert("Profile updated successfully!");
     } catch (err: unknown) {
       const error = err as Error;
-      alert("Failed to update profile: " + error.message);
+      alert("Update failed: " + error.message);
     } finally {
       setSaving(false);
     }
@@ -137,7 +133,7 @@ export default function ProfilePage() {
             <input
               type="text"
               required
-              placeholder="e.g. Mandya District, Karnataka"
+              placeholder="e.g. Village Tengli, Kalaburgi"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #cbd5e1" }}
