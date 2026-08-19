@@ -43,7 +43,7 @@ export default async function AdminLayout({
           <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
             <span style={{ fontSize: "1.4rem" }}>🛡️</span>
             <div>
-              <span style={{ fontSize: "1.1rem", fontWeight: "800", color: "#38bdf8" }}>AgriShare Admin Control</span>
+              <span style={{ fontSize: "1.1rem", fontWeight: "800", color: "#38bdf8" }}>GauShakti Admin Control</span>
               <span style={{ fontSize: "0.75rem", display: "block", color: "#9ca3af" }}>
                 Platform Monitoring & Super Control
               </span>

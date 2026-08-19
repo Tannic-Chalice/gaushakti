@@ -12,12 +12,16 @@ export default function Navbar() {
 
   useEffect(() => {
     async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
     }
     getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
 
@@ -48,36 +52,53 @@ export default function Navbar() {
       <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
         <span style={{ fontSize: "1.8rem" }}>🚜</span>
         <div>
-          <span style={{ fontSize: "1.35rem", fontWeight: "800", color: "#15803d" }}>AgriShare</span>
+          <span style={{ fontSize: "1.35rem", fontWeight: "800", color: "#15803d" }}>GauShakti</span>
           <span style={{ fontSize: "0.7rem", display: "block", color: "#64748b", fontWeight: "700" }}>
-            FARM MACHINERY RENTAL
+            AGRI & CATTLE RENTALS
           </span>
         </div>
       </Link>
 
       <nav style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+        {/* Public marketplace link */}
         <Link
-          href="/my-rentals"
+          href="/rent"
           style={{ padding: "0.55rem 0.9rem", fontSize: "0.9rem", color: "#334155", fontWeight: "600" }}
         >
-          My Rentals & Bookings
-        </Link>
-        <Link
-          href="/list-equipment"
-          style={{
-            backgroundColor: "#16a34a",
-            color: "#ffffff",
-            padding: "0.55rem 1.1rem",
-            borderRadius: "7px",
-            fontWeight: "700",
-            fontSize: "0.9rem",
-          }}
-        >
-          + List Equipment
+          Browse Rentals
         </Link>
 
         {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+            {/* Restored: My Bookings & Rentals Dashboard */}
+            <Link
+              href="/my-rentals"
+              style={{
+                padding: "0.55rem 0.9rem",
+                fontSize: "0.9rem",
+                color: "#15803d",
+                fontWeight: "700",
+              }}
+            >
+              📋 My Bookings
+            </Link>
+
+            {/* List Machinery / Cattle */}
+            <Link
+              href="/list-equipment"
+              style={{
+                backgroundColor: "#16a34a",
+                color: "#ffffff",
+                padding: "0.55rem 1.1rem",
+                borderRadius: "7px",
+                fontWeight: "700",
+                fontSize: "0.9rem",
+              }}
+            >
+              + List Equipment / Cattle
+            </Link>
+
+            {/* Farmer Profile */}
             <Link
               href="/profile"
               style={{
@@ -91,6 +112,8 @@ export default function Navbar() {
             >
               👤 Profile
             </Link>
+
+            {/* Sign Out */}
             <button
               onClick={handleSignOut}
               style={{
